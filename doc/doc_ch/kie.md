@@ -2,6 +2,7 @@
 
 本文提供了PaddleOCR关键信息抽取的全流程指南，包括语义实体识别 (Semantic Entity Recognition) 以及关系抽取 (Relation Extraction, RE) 任务的数据准备、模型训练、调优、评估、预测，各个阶段的详细说明。
 
+- [关键信息抽取](#关键信息抽取)
 - [1. 数据准备](#1-数据准备)
   - [1.1. 准备数据集](#11-准备数据集)
   - [1.2. 自定义数据集](#12-自定义数据集)
@@ -9,14 +10,16 @@
 - [2. 开始训练](#2-开始训练)
   - [2.1. 启动训练](#21-启动训练)
   - [2.2. 断点训练](#22-断点训练)
-  - [2.3. 混合精度训练](#24-混合精度训练)
-  - [2.4. 分布式训练](#25-分布式训练)
-  - [2.5. 知识蒸馏训练](#26-知识蒸馏训练)
-  - [2.6. 其他训练环境](#27-其他训练环境)
+  - [2.3. 混合精度训练](#23-混合精度训练)
+  - [2.4. 分布式训练](#24-分布式训练)
+  - [2.5. 知识蒸馏训练](#25-知识蒸馏训练)
+  - [2.6. 其他训练环境](#26-其他训练环境)
 - [3. 模型评估与预测](#3-模型评估与预测)
   - [3.1. 指标评估](#31-指标评估)
-  - [3.2. 测试信息抽取效果](#32-测试识别效果)
+  - [3.2. 测试信息抽取结果](#32-测试信息抽取结果)
 - [4. 模型导出与预测](#4-模型导出与预测)
+  - [4.1 模型导出](#41-模型导出)
+  - [4.2 模型推理](#42-模型推理)
 - [5. FAQ](#5-faq)
 
 # 1. 数据准备
@@ -99,7 +102,7 @@ HEADER
 **注：**
 
 - 标注文件中的类别信息不区分大小写，如`HEADER`与`header`会被解析为相同的类别id，因此在标注的时候，不能使用小写处理后相同的字符串表示不同的类别。
-- 在整理标注文件的时候，建议将other这个类别（其他，无需关注的文本行可以标注为other）放在第一行，在解析的时候，会将`other`类别的类别id解析为0，后续不会对该类进行可视化。
+- 在整理标注文件的时候，建议将`other`这个类别（其他，无需关注的文本行可以标注为other）放在第一行，在解析的时候，会将`other`类别的类别id解析为0，后续不会对该类进行可视化。
 
 ## 1.3. 数据下载
 
@@ -143,8 +146,8 @@ wget https://paddleocr.bj.bcebos.com/ppstructure/models/vi_layoutxlm/re_vi_layou
 
 开始训练:
 
-- 如果您安装的是cpu版本，请将配置文件中的 `use_gpu` 字段修改为false
-- PaddleOCR在训练时，会默认下载VI-LayoutXLM预训练模型，这里无需预先下载。
+- 如果您安装的是cpu版本，请将配置文件中的 `use_gpu` 字段修改为`false`
+- PaddleOCR在训练时，会默认下载`VI-LayoutXLM`预训练模型，这里无需预先下载。
 
 ```bash
 # GPU训练 支持单卡，多卡训练
@@ -173,16 +176,16 @@ python3 tools/train.py -c configs/kie/vi_layoutxlm/re_vi_layoutxlm_xfund_zh.yml
 
 log 中自动打印如下信息：
 
-|  字段   |   含义   |  
-| :----: | :------: |
-|  epoch | 当前迭代轮次 |
-|  iter  | 当前迭代次数 |
-|  lr    | 当前学习率 |
-|  loss  | 当前损失函数 |
-|  reader_cost | 当前 batch 数据处理耗时 |
-|  batch_cost | 当前 batch 总耗时 |
-|  samples  | 当前 batch 内的样本数 |
-|  ips  | 每秒处理图片的数量 |
+|    字段     |          含义           |
+| :---------: | :---------------------: |
+|    epoch    |      当前迭代轮次       |
+|    iter     |      当前迭代次数       |
+|     lr      |       当前学习率        |
+|    loss     |      当前损失函数       |
+| reader_cost | 当前 batch 数据处理耗时 |
+| batch_cost  |    当前 batch 总耗时    |
+|   samples   |  当前 batch 内的样本数  |
+|     ips     |   每秒处理图片的数量    |
 
 
 PaddleOCR支持训练和评估交替进行, 可以在 `configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml` 中修改 `eval_batch_step` 设置评估频率，默认每19个iter评估一次。评估过程中默认将最佳hmean模型，保存为 `output/ser_vi_layoutxlm_xfund_zh/best_accuracy/` 。
@@ -343,11 +346,13 @@ output/ser_vi_layoutxlm_xfund_zh/
 
 预测使用的配置文件必须与训练一致，如您通过 `python3 tools/train.py -c configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml` 完成了模型的训练过程。
 
-您可以使用如下命令进行中文模型预测。
-
+您可以使用如下命令进行中文模型**预测**。
 
 ```bash
-python3 tools/infer_kie_token_ser.py -c configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml -o Architecture.Backbone.checkpoints=./output/ser_vi_layoutxlm_xfund_zh/best_accuracy Global.infer_img=./ppstructure/docs/kie/input/zh_val_42.jpg
+python3 tools/infer_kie_token_ser.py \
+  -c configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml \
+  -o Architecture.Backbone.checkpoints=./output/ser_vi_layoutxlm_xfund_zh/best_accuracy \
+  Global.infer_img=./ppstructure/docs/kie/input/zh_val_42.jpg
 ```
 
 预测图片如下所示，图片会存储在`Global.save_res_path`路径中。
@@ -356,10 +361,14 @@ python3 tools/infer_kie_token_ser.py -c configs/kie/vi_layoutxlm/ser_vi_layoutxl
     <img src="../../ppstructure/docs/kie/result_ser/zh_val_42_ser.jpg" width="800">
 </div>
 
-预测过程中，默认会加载PP-OCRv3的检测识别模型，用于OCR的信息抽取，如果希望加载预先获取的OCR结果，可以使用下面的方式进行预测，指定`Global.infer_img`为标注文件，其中包含图片路径以及OCR信息，同时指定`Global.infer_mode`为False，表示此时不使用OCR预测引擎。
+预测过程中，默认会加载PP-OCRv3的检测识别模型，用于OCR的信息抽取，如果希望加载预先获取的OCR结果，可以使用下面的方式进行预测，指定`Global.infer_img`为标注文件，其中包含图片路径以及OCR信息，同时指定`Global.infer_mode`为`False`，表示此时不使用OCR预测引擎。
 
 ```bash
-python3 tools/infer_kie_token_ser.py -c configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml -o Architecture.Backbone.checkpoints=./output/ser_vi_layoutxlm_xfund_zh/best_accuracy Global.infer_img=./train_data/XFUND/zh_val/val.json Global.infer_mode=False
+python3 tools/infer_kie_token_ser.py \
+  -c configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml \
+  -o Architecture.Backbone.checkpoints=./output/ser_vi_layoutxlm_xfund_zh/best_accuracy \
+  Global.infer_img=./train_data/XFUND/zh_val/val.json \
+  Global.infer_mode=False
 ```
 
 对于上述图片，如果使用标注的OCR结果进行信息抽取，预测结果如下。
@@ -371,7 +380,7 @@ python3 tools/infer_kie_token_ser.py -c configs/kie/vi_layoutxlm/ser_vi_layoutxl
 可以看出，部分检测框信息更加准确，但是整体信息抽取识别结果基本一致。
 
 
-在RE任务模型预测时，需要先给出模型SER结果，因此需要同时加载SER的配置文件与模型权重，示例如下。
+在`RE`任务模型预测时，需要先给出模型`SER`结果，因此需要同时加载`SER`的配置文件与模型权重，示例如下。
 
 
 ```bash
@@ -394,10 +403,16 @@ python3 ./tools/infer_kie_token_ser_re.py \
 如果希望使用标注或者预先获取的OCR信息进行关键信息抽取，同上，可以指定`Global.infer_mode`为False，指定`Global.infer_img`为标注文件。
 
 ```bash
-python3 ./tools/infer_kie_token_ser_re.py -c configs/kie/vi_layoutxlm/re_vi_layoutxlm_xfund_zh.yml -o Architecture.Backbone.checkpoints=./pretrain_models/re_vi_layoutxlm_udml_xfund_zh/re_layoutxlm_xfund_zh_v4_udml/best_accuracy/ Global.infer_img=./train_data/XFUND/zh_val/val.json Global.infer_mode=False -c_ser configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml -o_ser Architecture.Backbone.checkpoints=pretrain_models/ser_vi_layoutxlm_udml_xfund_zh/best_accuracy/
+python3 ./tools/infer_kie_token_ser_re.py -c \
+  configs/kie/vi_layoutxlm/re_vi_layoutxlm_xfund_zh.yml \
+  -o Architecture.Backbone.checkpoints=./pretrain_models/re_vi_layoutxlm_udml_xfund_zh/re_layoutxlm_xfund_zh_v4_udml/best_accuracy/ \
+  Global.infer_img=./train_data/XFUND/zh_val/val.json \
+  Global.infer_mode=False \
+  -c_ser configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml \
+  -o_ser Architecture.Backbone.checkpoints=pretrain_models/ser_vi_layoutxlm_udml_xfund_zh/best_accuracy/
 ```
 
-其中`c_ser`表示SER的配置文件，`o_ser` 后面需要加上待修改的SER模型与配置文件，如预训练权重等。
+其中`c_ser`表示`SER`的配置文件，`o_ser` 后面需要加上待修改的SER模型与配置文件，如预训练权重等。
 
 
 预测结果如下所示。
@@ -413,12 +428,12 @@ python3 ./tools/infer_kie_token_ser_re.py -c configs/kie/vi_layoutxlm/re_vi_layo
 
 ## 4.1 模型导出
 
-inference 模型（`paddle.jit.save`保存的模型）
+`inference` 模型（`paddle.jit.save`保存的模型）
 一般是模型训练，把模型结构和模型参数保存在文件中的固化模型，多用于预测部署场景。
-训练过程中保存的模型是checkpoints模型，保存的只有模型的参数，多用于恢复训练等。
-与checkpoints模型相比，inference 模型会额外保存模型的结构信息，在预测部署、加速推理上性能优越，灵活方便，适合于实际系统集成。
+训练过程中保存的模型是`checkpoints`模型，保存的只有模型的参数，多用于恢复训练等。
+与`checkpoints`模型相比，`inference` 模型会额外保存模型的结构信息，在预测部署、加速推理上性能优越，灵活方便，适合于实际系统集成。
 
-信息抽取模型中的SER任务转inference模型步骤如下：
+信息抽取模型中的SER任务转`inference`模型步骤如下：
 
 ```bash
 # -c 后面设置训练算法的yml配置文件
@@ -426,7 +441,10 @@ inference 模型（`paddle.jit.save`保存的模型）
 # Architecture.Backbone.checkpoints 参数设置待转换的训练模型地址
 # Global.save_inference_dir 参数设置转换的模型将保存的地址
 
-python3 tools/export_model.py -c configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml -o Architecture.Backbone.checkpoints=./output/ser_vi_layoutxlm_xfund_zh/best_accuracy Global.save_inference_dir=./inference/ser_vi_layoutxlm
+python3 tools/export_model.py \
+  -c configs/kie/vi_layoutxlm/ser_vi_layoutxlm_xfund_zh.yml \
+  -o Architecture.Backbone.checkpoints=./output/ser_vi_layoutxlm_xfund_zh/best_accuracy \
+  Global.save_inference_dir=./inference/ser_vi_layoutxlm
 ```
 
 转换成功后，在目录下有三个文件：
@@ -438,7 +456,7 @@ inference/ser_vi_layoutxlm/
     └── inference.pdmodel           # inference模型的模型结构文件
 ```
 
-信息抽取模型中的RE任务转inference模型步骤如下：
+信息抽取模型中的`RE`任务转inference模型步骤如下：
 
 ``` bash
 # -c 后面设置训练算法的yml配置文件
@@ -446,7 +464,10 @@ inference/ser_vi_layoutxlm/
 # Architecture.Backbone.checkpoints 参数设置待转换的训练模型地址
 # Global.save_inference_dir 参数设置转换的模型将保存的地址
 
-python3 tools/export_model.py -c configs/kie/vi_layoutxlm/re_vi_layoutxlm_xfund_zh.yml -o Architecture.Backbone.checkpoints=./output/re_vi_layoutxlm_xfund_zh/best_accuracy Global.save_inference_dir=./inference/re_vi_layoutxlm
+python3 tools/export_model.py \
+  -c configs/kie/vi_layoutxlm/re_vi_layoutxlm_xfund_zh.yml \
+  -o Architecture.Backbone.checkpoints=./output/re_vi_layoutxlm_xfund_zh/best_accuracy \
+  Global.save_inference_dir=./inference/re_vi_layoutxlm
 ```
 
 转换成功后，在目录下有三个文件：
@@ -494,7 +515,7 @@ python3 kie/predict_kie_token_ser_re.py \
   --ocr_order_method="tb-yx"
 ```
 
-RE可视化结果默认保存到`./output`文件夹里面，结果示例如下：
+`RE`可视化结果默认保存到`./output`文件夹里面，结果示例如下：
 
 <div align="center">
     <img src="../../ppstructure/docs/kie/result_re/zh_val_42_re.jpg" width="800">
@@ -504,4 +525,4 @@ RE可视化结果默认保存到`./output`文件夹里面，结果示例如下�
 
 Q1: 训练模型转inference 模型之后预测效果不一致？
 
-**A**：该问题多是trained model预测时候的预处理、后处理参数和inference model预测的时候的预处理、后处理参数不一致导致的。可以对比训练使用的配置文件中的预处理、后处理和预测时是否存在差异。
+**A**：该问题多是`trained model`预测时候的预处理、后处理参数和inference model预测的时候的预处理、后处理参数不一致导致的。可以对比训练使用的配置文件中的预处理、后处理和预测时是否存在差异。

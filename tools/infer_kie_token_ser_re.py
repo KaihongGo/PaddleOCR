@@ -64,9 +64,9 @@ class ReArgsParser(ArgsParser):
 def make_input(ser_inputs, ser_results):
     entities_labels = {'HEADER': 0, 'QUESTION': 1, 'ANSWER': 2}
     batch_size, max_seq_len = ser_inputs[0].shape[:2]
-    entities = ser_inputs[8][0]
-    ser_results = ser_results[0]
-    assert len(entities) == len(ser_results)
+    entities = ser_inputs[8][0] # ocr_info
+    ser_results = ser_results[0] # ocr_info
+    assert len(entities) == len(ser_results) # 每一个OCR块 
 
     # entities
     start = []

@@ -50,7 +50,7 @@ def term_mp(sig_num, frame):
     os.killpg(pgid, signal.SIGKILL)
 
 
-def build_dataloader(config, mode, device, logger, seed=None):
+def build_dataloader(config, mode:str, device, logger, seed=None):
     config = copy.deepcopy(config)
 
     support_dict = [
@@ -64,6 +64,7 @@ def build_dataloader(config, mode, device, logger, seed=None):
                     ], "Mode should be Train, Eval or Test."
 
     dataset = eval(module_name)(config, mode, logger, seed)
+    
     loader_config = config[mode]['loader']
     batch_size = loader_config['batch_size_per_card']
     drop_last = loader_config['drop_last']

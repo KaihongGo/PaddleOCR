@@ -826,11 +826,11 @@ class TableBoxEncode(object):
         return data
 
     def xyxyxyxy2xywh(self, boxes):
-        new_bboxes = np.zeros([len(bboxes), 4])
-        new_bboxes[:, 0] = bboxes[:, 0::2].min()  # x1
-        new_bboxes[:, 1] = bboxes[:, 1::2].min()  # y1
-        new_bboxes[:, 2] = bboxes[:, 0::2].max() - new_bboxes[:, 0]  # w
-        new_bboxes[:, 3] = bboxes[:, 1::2].max() - new_bboxes[:, 1]  # h
+        new_bboxes = np.zeros([len(boxes), 4])
+        new_bboxes[:, 0] = boxes[:, 0::2].min()  # x1
+        new_bboxes[:, 1] = boxes[:, 1::2].min()  # y1
+        new_bboxes[:, 2] = boxes[:, 0::2].max() - new_bboxes[:, 0]  # w
+        new_bboxes[:, 3] = boxes[:, 1::2].max() - new_bboxes[:, 1]  # h
         return new_bboxes
 
     def xyxy2xywh(self, bboxes):
@@ -949,7 +949,7 @@ class VQATokenLabelEncode(object):
                  ocr_engine=None,
                  **kwargs):
         super(VQATokenLabelEncode, self).__init__()
-        from paddlenlp.transformers import LayoutXLMTokenizer, LayoutLMTokenizer, LayoutLMv2Tokenizer
+        from paddlenlp.transformers import LayoutXLMTokenizer, LayoutLMTokenizer, LayoutLMv2Tokenizer, AutoTokenizer
         from ppocr.utils.utility import load_vqa_bio_label_maps
         tokenizer_dict = {
             'LayoutXLM': {
@@ -963,6 +963,10 @@ class VQATokenLabelEncode(object):
             'LayoutLMv2': {
                 'class': LayoutLMv2Tokenizer,
                 'pretrained_model': 'layoutlmv2-base-uncased'
+            },
+            "Bert": {
+                'class': AutoTokenizer,
+                'pretrained_model': 'bert-base-chinese'
             }
         }
         self.contains_re = contains_re
@@ -977,7 +981,13 @@ class VQATokenLabelEncode(object):
         self.order_method = order_method
         assert self.order_method in [None, "tb-yx"]
 
-    def split_bbox(self, bbox, text, tokenizer):
+    def split_bbox(self, bbox, text: str, tokenizer):
+        """ Split bbox according to wordpiece tokenization
+        Args:
+            bbox (list): [x1, y1, x2, y2] of a textline
+            text (str): text
+            tokenizer (tokenizer): tokenizer
+        """
         words = text.split()
         token_bboxes = []
         curr_word_idx = 0
@@ -1020,6 +1030,7 @@ class VQATokenLabelEncode(object):
                 ocr_info[idx]["bbox"] = self.trans_poly_to_bbox(ocr_info[idx][
                     "points"])
 
+        # 排序 ocr_info
         if self.order_method == "tb-yx":
             ocr_info = order_by_tbyx(ocr_info)
 
@@ -1058,9 +1069,11 @@ class VQATokenLabelEncode(object):
                     continue
                 id2label[info["id"]] = info["label"]
                 relations.extend([tuple(sorted(l)) for l in info["linking"]])
+            
             # smooth_box
             info["bbox"] = self.trans_poly_to_bbox(info["points"])
 
+            # tokenization
             encode_res = self.tokenizer.encode(
                 text,
                 pad_to_max_seq_len=False,
@@ -1074,12 +1087,9 @@ class VQATokenLabelEncode(object):
                                                                             -1]
                 encode_res["attention_mask"] = encode_res["attention_mask"][1:
                                                                             -1]
-
-            if self.use_textline_bbox_info:
-                bbox = [info["bbox"]] * len(encode_res["input_ids"])
-            else:
-                bbox = self.split_bbox(info["bbox"], info["transcription"],
-                                       self.tokenizer)
+            # parse bbox
+            bbox = [info["bbox"]] * len(encode_res["input_ids"]) \
+                if self.use_textline_bbox_info else self.split_bbox(info["bbox"], info["transcription"], self.tokenizer)
             if len(bbox) <= 0:
                 continue
             bbox = self._smooth_box(bbox, height, width)
@@ -1161,6 +1171,12 @@ class VQATokenLabelEncode(object):
             return info_dict
 
     def _smooth_box(self, bboxes, height, width):
+        """ Normalize the coordinates of the bounding boxes
+        Args:
+            bboxes (list): a list of bounding boxes
+            height (int): the height of the image
+            width (int): the width of the image
+        """
         bboxes = np.array(bboxes)
         bboxes[:, 0] = bboxes[:, 0] * 1000 / width
         bboxes[:, 2] = bboxes[:, 2] * 1000 / width

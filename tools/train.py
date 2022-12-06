@@ -59,21 +59,16 @@ def main(config, device, logger, vdl_writer):
         )
         return
 
-    if config['Eval']:
-        valid_dataloader = build_dataloader(config, 'Eval', device, logger)
-    else:
-        valid_dataloader = None
+    valid_dataloader = build_dataloader(config, 'Eval', device, logger) if config["Eval"] else None
 
     # build post process
-    post_process_class = build_post_process(config['PostProcess'],
-                                            global_config)
+    post_process_class = build_post_process(config['PostProcess'], global_config)
 
     # build model
     # for rec algorithm
     if hasattr(post_process_class, 'character'):
         char_num = len(getattr(post_process_class, 'character'))
-        if config['Architecture']["algorithm"] in ["Distillation",
-                                                   ]:  # distillation model
+        if config['Architecture']["algorithm"] in ["Distillation",]:  # distillation model
             for key in config['Architecture']["Models"]:
                 if config['Architecture']['Models'][key]['Head'][
                         'name'] == 'MultiHead':  # for multi head
@@ -182,28 +177,8 @@ def main(config, device, logger, vdl_writer):
                   eval_class, pre_best_model_dict, logger, vdl_writer, scaler,
                   amp_level, amp_custom_black_list)
 
-
-def test_reader(config, device, logger):
-    loader = build_dataloader(config, 'Train', device, logger)
-    import time
-    starttime = time.time()
-    count = 0
-    try:
-        for data in loader():
-            count += 1
-            if count % 1 == 0:
-                batch_time = time.time() - starttime
-                starttime = time.time()
-                logger.info("reader: {}, {}, {}".format(
-                    count, len(data[0]), batch_time))
-    except Exception as e:
-        logger.info(e)
-    logger.info("finish reader: {}, Success!".format(count))
-
-
 if __name__ == '__main__':
     config, device, logger, vdl_writer = program.preprocess(is_train=True)
     seed = config['Global']['seed'] if 'seed' in config['Global'] else 1024
     set_seed(seed)
     main(config, device, logger, vdl_writer)
-    # test_reader(config, device, logger)

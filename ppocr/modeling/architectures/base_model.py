@@ -53,7 +53,8 @@ class BaseModel(nn.Layer):
             self.use_backbone = True
             config["Backbone"]['in_channels'] = in_channels
             self.backbone = build_backbone(config["Backbone"], model_type)
-            in_channels = self.backbone.out_channels
+            if hasattr(self.backbone, 'out_channels'):
+                in_channels = self.backbone.out_channels
 
         # build neck
         # for rec, neck can be cnn,rnn or reshape(None)

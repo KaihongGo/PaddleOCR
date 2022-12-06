@@ -50,40 +50,26 @@ class VQATokenPad(object):
             difference = self.max_seq_len - len(data["input_ids"])
             if tokenizer_params['padding_side'] == 'right':
                 if self.return_attention_mask:
-                    data["attention_mask"] = [1] * len(data[
-                        "input_ids"]) + [0] * difference
+                    data["attention_mask"] = [1] * len(data["input_ids"]) + [0] * difference
                 if self.return_token_type_ids:
-                    data["token_type_ids"] = (
-                        data["token_type_ids"] +
-                        [tokenizer_params['pad_token_type_id']] * difference)
+                    data["token_type_ids"] = data["token_type_ids"] + [tokenizer_params['pad_token_type_id']] * difference
                 if self.return_special_tokens_mask:
-                    data["special_tokens_mask"] = data[
-                        "special_tokens_mask"] + [1] * difference
-                data["input_ids"] = data["input_ids"] + [
-                    tokenizer_params['pad_token_id']
-                ] * difference
+                    data["special_tokens_mask"] = data["special_tokens_mask"] + [1] * difference
+                
+                data["input_ids"] = data["input_ids"] + [tokenizer_params['pad_token_id']] * difference
                 if not self.infer_mode:
-                    data["labels"] = data[
-                        "labels"] + [self.pad_token_label_id] * difference
+                    data["labels"] = data["labels"] + [self.pad_token_label_id] * difference
                 data["bbox"] = data["bbox"] + [[0, 0, 0, 0]] * difference
             elif tokenizer_params['padding_side'] == 'left':
                 if self.return_attention_mask:
-                    data["attention_mask"] = [0] * difference + [
-                        1
-                    ] * len(data["input_ids"])
+                    data["attention_mask"] = [0] * difference + [1] * len(data["input_ids"])
                 if self.return_token_type_ids:
-                    data["token_type_ids"] = (
-                        [tokenizer_params['pad_token_type_id']] * difference +
-                        data["token_type_ids"])
+                    data["token_type_ids"] = ([tokenizer_params['pad_token_type_id']] * difference + data["token_type_ids"])
                 if self.return_special_tokens_mask:
-                    data["special_tokens_mask"] = [
-                        1
-                    ] * difference + data["special_tokens_mask"]
-                data["input_ids"] = [tokenizer_params['pad_token_id']
-                                     ] * difference + data["input_ids"]
+                    data["special_tokens_mask"] = [1] * difference + data["special_tokens_mask"]
+                data["input_ids"] = [tokenizer_params['pad_token_id']] * difference + data["input_ids"]
                 if not self.infer_mode:
-                    data["labels"] = [self.pad_token_label_id
-                                      ] * difference + data["labels"]
+                    data["labels"] = [self.pad_token_label_id] * difference + data["labels"]
                 data["bbox"] = [[0, 0, 0, 0]] * difference + data["bbox"]
         else:
             if self.return_attention_mask:

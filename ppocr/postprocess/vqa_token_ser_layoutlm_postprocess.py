@@ -52,11 +52,13 @@ class VQASerTokenLayoutLMPostProcess(object):
             return self._infer(preds, **kwargs)
 
     def _metric(self, preds, label):
-        pred_idxs = preds.argmax(axis=2)
+        pred_idxs = preds.argmax(axis=2) # (batch_size, seq_len, num_classes)
         decode_out_list = [[] for _ in range(pred_idxs.shape[0])]
         label_decode_out_list = [[] for _ in range(pred_idxs.shape[0])]
 
-        for i in range(pred_idxs.shape[0]):
+        # for each batch
+        for i in range(pred_idxs.shape[0]): 
+            # for each label
             for j in range(pred_idxs.shape[1]):
                 if label[i, j] != -100:
                     label_decode_out_list[i].append(self.id2label_map[label[i,
@@ -89,6 +91,7 @@ class VQASerTokenLayoutLMPostProcess(object):
                 else:
                     counts = np.bincount(curr_pred)
                     pred_id = np.argmax(counts)
+                # 按照 ocr_info 的 块顺序
                 ocr_info[idx]["pred_id"] = int(pred_id)
                 ocr_info[idx]["pred"] = self.id2label_map_for_show[int(pred_id)]
             results.append(ocr_info)

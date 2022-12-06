@@ -32,6 +32,7 @@ class VQAReTokenRelation(object):
             rel for rel in relations
             if rel[0] not in empty_entity and rel[1] not in empty_entity
         ]
+        
         kv_relations = []
         for rel in relations:
             pair = [id2label[rel[0]], id2label[rel[1]]]

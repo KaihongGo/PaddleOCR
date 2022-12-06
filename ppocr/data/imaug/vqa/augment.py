@@ -20,6 +20,13 @@ from copy import deepcopy
 
 
 def order_by_tbyx(ocr_info):
+    """ order by top to bottom, left to right
+    Args:
+        ocr_info (list):
+        {
+            
+        }
+    """
     res = sorted(ocr_info, key=lambda r: (r["bbox"][1], r["bbox"][0]))
     for i in range(len(res) - 1):
         for j in range(i, 0, -1):

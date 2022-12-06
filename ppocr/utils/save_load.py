@@ -47,6 +47,7 @@ def _mkdir_if_not_exist(path, logger):
 def load_model(config, model, optimizer=None, model_type='det'):
     """
     load model from checkpoint or pretrained_model
+   
     """
     logger = get_logger()
     global_config = config['Global']
@@ -57,6 +58,7 @@ def load_model(config, model, optimizer=None, model_type='det'):
     is_nlp_model = model_type == 'kie' and config["Architecture"][
         "algorithm"] not in ["SDMGR"]
 
+    # model resume
     if is_nlp_model is True:
         # NOTE: for kie model dsitillation, resume training is not supported now
         if config["Architecture"]["algorithm"] in ["Distillation"]:

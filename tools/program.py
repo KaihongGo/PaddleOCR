@@ -72,7 +72,7 @@ class ArgsParser(ArgumentParser):
         return config
 
 
-def load_config(file_path):
+def load_config(file_path) -> dict:
     """
     Load config from yml/yaml file.
     Args:
@@ -302,6 +302,7 @@ def train(config,
             if cal_metric_during_train and epoch % calc_epoch_interval == 0:  # only rec and cls need
                 batch = [item.numpy() for item in batch]
                 if model_type in ['kie', 'sr']:
+                    # post_result = post_process_class(preds, batch)
                     eval_class(preds, batch)
                 elif model_type in ['table']:
                     post_result = post_process_class(preds, batch)
@@ -362,6 +363,7 @@ def train(config,
                 total_samples = 0
                 train_reader_cost = 0.0
                 train_batch_cost = 0.0
+            
             # eval
             if global_step > start_eval_step and \
                     (global_step - start_eval_step) % eval_batch_step == 0 \
@@ -427,21 +429,6 @@ def train(config,
                         metadata=best_model_dict)
 
             reader_start = time.time()
-        if dist.get_rank() == 0:
-            save_model(
-                model,
-                optimizer,
-                save_model_dir,
-                logger,
-                config,
-                is_best=False,
-                prefix='latest',
-                best_model_dict=best_model_dict,
-                epoch=epoch,
-                global_step=global_step)
-
-            if log_writer is not None:
-                log_writer.log_model(is_best=False, prefix="latest")
 
         if dist.get_rank() == 0 and epoch > 0 and epoch % save_epoch_step == 0:
             save_model(
@@ -643,7 +630,7 @@ def preprocess(is_train=False):
         'SEED', 'SDMGR', 'LayoutXLM', 'LayoutLM', 'LayoutLMv2', 'PREN', 'FCE',
         'SVTR', 'ViTSTR', 'ABINet', 'DB++', 'TableMaster', 'SPIN', 'VisionLAN',
         'Gestalt', 'SLANet', 'RobustScanner', 'CT', 'RFL', 'DRRG', 'CAN',
-        'Telescope'
+        'Telescope', 'Bert'
     ]
 
     if use_xpu:

@@ -29,6 +29,11 @@ class VQASerTokenLayoutLMLoss(nn.Layer):
         self.key = key
 
     def forward(self, predicts, batch):
+        """
+        batch: ['input_ids', 'bbox', 'attention_mask', 'token_type_ids', 
+                'image', 'labels', 'segment_offset_id', 
+                'ocr_info', 'entities']
+        """
         if isinstance(predicts, dict) and self.key is not None:
             predicts = predicts[self.key]
         labels = batch[5]

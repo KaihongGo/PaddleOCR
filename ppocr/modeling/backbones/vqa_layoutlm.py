@@ -23,6 +23,8 @@ from paddlenlp.transformers import LayoutXLMModel, LayoutXLMForTokenClassificati
 from paddlenlp.transformers import LayoutLMModel, LayoutLMForTokenClassification
 from paddlenlp.transformers import LayoutLMv2Model, LayoutLMv2ForTokenClassification, LayoutLMv2ForRelationExtraction
 from paddlenlp.transformers import AutoModel
+from paddlenlp.transformers import BertModel, BertForTokenClassification
+from ppocr.modeling.backbones.utils.nlp_model import BertForRelationExtraction
 
 __all__ = ["LayoutXLMForSer", "LayoutLMForSer"]
 
@@ -38,6 +40,9 @@ pretrained_model_dict = {
         "base": "layoutlmv2-base-uncased",
         "vi": "vi-layoutlmv2-base-uncased",
     },
+    BertModel: {
+        "base": "bert-base-chinese"
+    }
 }
 
 
@@ -50,22 +55,32 @@ class NLPBaseModel(nn.Layer):
                  pretrained=True,
                  checkpoints=None,
                  **kwargs):
+        """
+        Args:
+            base_model_class (class): The base model class of the model to instantiate.
+            model_class (class): downstream model class, 
+                LayoutLMv2ForRelationExtraction for relation extraction, LayoutXLMForTokenClassification for token classification. 
+            mode (str, optional): The model mode of base_model_class. Defaults to "base".
+            type (str, optional): The type of downstream model. Defaults to "ser".
+            pretrained (bool, optional): Whether to load pretrained model. Defaults to True.
+            checkpoints (str, optional): The path or url of pretrained model. Defaults to None.
+        """
         super(NLPBaseModel, self).__init__()
         if checkpoints is not None:  # load the trained model
             self.model = model_class.from_pretrained(checkpoints)
         else:  # load the pretrained-model
-            pretrained_model_name = pretrained_model_dict[base_model_class][
-                mode]
-            if pretrained is True:
-                base_model = base_model_class.from_pretrained(
-                    pretrained_model_name)
-            else:
-                base_model = base_model_class.from_pretrained(pretrained)
+            pretrained_model_name = pretrained_model_dict[base_model_class][mode]
+            base_model = base_model_class.from_pretrained(pretrained_model_name) \
+                if pretrained else base_model_class.from_pretrained(pretrained)
+            
             if type == "ser":
                 self.model = model_class(
                     base_model, num_classes=kwargs["num_classes"], dropout=None)
-            else:
+            elif type=="re":
                 self.model = model_class(base_model, dropout=None)
+            else:
+                raise ValueError("type must be ser or re")
+        
         self.out_channels = 1
         self.use_visual_backbone = True
 
@@ -159,10 +174,13 @@ class LayoutXLMForSer(NLPBaseModel):
             self.use_visual_backbone = False
 
     def forward(self, x):
-        if self.use_visual_backbone is True:
-            image = x[4]
-        else:
-            image = None
+        """
+        x: ['input_ids', 'bbox', 'attention_mask', 
+            'token_type_ids', 'image', 'labels', 
+            'segment_offset_id', 'ocr_info', 'entities']
+        """
+        image = x[4] if self.use_visual_backbone is True else None
+
         x = self.model(
             input_ids=x[0],
             bbox=x[1],
@@ -175,6 +193,32 @@ class LayoutXLMForSer(NLPBaseModel):
         if self.training:
             res = {"backbone_out": x[0]}
             res.update(x[1])
+            return res
+        else:
+            return x
+
+
+class BertForSer(NLPBaseModel):
+    def __init__(self,
+                 num_classes,
+                 pretrained=True,
+                 checkpoints=None,
+                 mode="base",
+                 **kwargs):
+        super(BertForSer, self).__init__(
+            BertModel,
+            BertForTokenClassification,
+            mode,
+            type="ser",
+            pretrained=pretrained,
+            checkpoints=checkpoints,
+            num_classes=num_classes
+        )
+
+    def forward(self, x):
+        x = self.model(input_ids=x[0], token_type_ids=x[3])
+        if self.training:
+            res = {"backbone_out": x}
             return res
         else:
             return x
@@ -235,4 +279,22 @@ class LayoutXLMForRe(NLPBaseModel):
             labels=None,
             entities=entities,
             relations=relations)
+        return x
+
+
+class BertForRe(NLPBaseModel):
+    def __init__(self,
+                 pretrained=True,
+                 checkpoints=None,
+                 mode="base",
+                 **kwargs):
+        super(BertForRe, self).__init__(BertModel, BertForRelationExtraction,
+                                        mode, "re", pretrained, checkpoints)
+
+    def forward(self, x):
+        x = self.model(input_ids=x[0],
+                       attention_mask=x[2],
+                       entities=x[4],
+                       relations=x[5],
+                       token_type_ids=x[3])
         return x

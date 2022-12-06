@@ -38,6 +38,14 @@ def draw_ser_results(image,
 
     font = ImageFont.truetype(font_path, font_size, encoding="utf-8")
     for ocr_info in ocr_results:
+        """
+        ocr_info: {
+            "pred_id": pred_id,
+            "pred": pred,
+            "transcription": transcription,
+            "bbox": bbox,
+        }
+        """
         if ocr_info["pred_id"] not in color_map:
             continue
         color = color_map[ocr_info["pred_id"]]
@@ -56,6 +64,17 @@ def draw_ser_results(image,
 
 
 def draw_box_txt(bbox, text, draw, font, font_size, color):
+    """ draw box and text
+    Args:
+        bbox (list): [x1, y1, x2, y2]
+        text (str): text to draw
+        draw (ImageDraw): ImageDraw object
+        font (ImageFont): ImageFont object
+        font_size (int): font size
+        color (tuple): color
+    Returns:
+        None
+    """
 
     # draw ocr results outline
     bbox = ((bbox[0], bbox[1]), (bbox[2], bbox[3]))

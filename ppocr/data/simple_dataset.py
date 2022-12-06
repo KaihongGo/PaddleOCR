@@ -40,10 +40,12 @@ class SimpleDataSet(Dataset):
         assert len(
             ratio_list
         ) == data_source_num, "The length of ratio_list should be the same as the file_list."
+        
         self.data_dir = dataset_config['data_dir']
         self.do_shuffle = loader_config['shuffle']
         self.seed = seed
         logger.info("Initialize indexs of datasets:%s" % label_file_list)
+        
         self.data_lines = self.get_image_info_list(label_file_list, ratio_list)
         self.data_idx_order_list = list(range(len(self.data_lines)))
         if self.mode == "train" and self.do_shuffle:
