@@ -3,10 +3,10 @@ Global:
   epoch_num: &epoch_num 130
   log_smooth_window: 10
   print_batch_step: 10
-  save_model_dir: ./output/re_layoutxlm_xfund_zh
+  save_model_dir: ./output/union/group3/re_layoutxlm_xfund_zh
   save_epoch_step: 2000
   # evaluation is run every 10 iterations after the 0th iteration
-  eval_batch_step: [ 0, 19 ]
+  eval_batch_step: [0, 19]
   cal_metric_during_train: False
   save_inference_dir:
   use_visualdl: False
@@ -39,7 +39,7 @@ Optimizer:
   regularizer:
     name: L2
     factor: 0.00000
-    
+
 PostProcess:
   name: VQAReTokenLayoutLMPostProcess
 
@@ -50,10 +50,10 @@ Metric:
 Train:
   dataset:
     name: SimpleDataSet
-    data_dir: train_data/XFUND/zh_train/image
-    label_file_list: 
-      - train_data/XFUND/zh_train/train.json
-    ratio_list: [ 1.0 ]
+    data_dir: train_data/union/image
+    label_file_list:
+      - train_data/union/train.json
+    ratio_list: [1.0]
     transforms:
       - DecodeImage: # load image
           img_mode: RGB
@@ -62,6 +62,8 @@ Train:
           contains_re: True
           algorithm: *algorithm
           class_path: &class_path train_data/XFUND/class_list_xfun.txt
+          use_textline_bbox_info: &use_textline_bbox_info True
+          order_method: &order_method "tb-yx"
       - VQATokenPad:
           max_seq_len: &max_seq_len 512
           return_attention_mask: True
@@ -70,15 +72,23 @@ Train:
           max_seq_len: *max_seq_len
       - TensorizeEntitiesRelations:
       - Resize:
-          size: [224,224]
+          size: [224, 224]
       - NormalizeImage:
           scale: 1
-          mean: [ 123.675, 116.28, 103.53 ]
-          std: [ 58.395, 57.12, 57.375 ]
-          order: 'hwc'
+          mean: [123.675, 116.28, 103.53]
+          std: [58.395, 57.12, 57.375]
+          order: "hwc"
       - ToCHWImage:
       - KeepKeys:
-          keep_keys: [ 'input_ids', 'bbox','attention_mask', 'token_type_ids', 'image', 'entities', 'relations'] # dataloader will return list in this order
+          keep_keys: [
+              "input_ids",
+              "bbox",
+              "attention_mask",
+              "token_type_ids",
+              "image",
+              "entities",
+              "relations",
+            ] # dataloader will return list in this order
   loader:
     shuffle: True
     drop_last: False
@@ -88,9 +98,9 @@ Train:
 Eval:
   dataset:
     name: SimpleDataSet
-    data_dir: train_data/XFUND/zh_val/image
+    data_dir: train_data/union/image
     label_file_list:
-      - train_data/XFUND/zh_val/val.json
+      - train_data/union/val.json
     transforms:
       - DecodeImage: # load image
           img_mode: RGB
@@ -99,6 +109,8 @@ Eval:
           contains_re: True
           algorithm: *algorithm
           class_path: *class_path
+          use_textline_bbox_info: *use_textline_bbox_info
+          order_method: *order_method
       - VQATokenPad:
           max_seq_len: *max_seq_len
           return_attention_mask: True
@@ -107,15 +119,23 @@ Eval:
           max_seq_len: *max_seq_len
       - TensorizeEntitiesRelations:
       - Resize:
-          size: [224,224]
+          size: [224, 224]
       - NormalizeImage:
           scale: 1
-          mean: [ 123.675, 116.28, 103.53 ]
-          std: [ 58.395, 57.12, 57.375 ]
-          order: 'hwc'
+          mean: [123.675, 116.28, 103.53]
+          std: [58.395, 57.12, 57.375]
+          order: "hwc"
       - ToCHWImage:
       - KeepKeys:
-          keep_keys: [ 'input_ids', 'bbox', 'attention_mask', 'token_type_ids', 'image', 'entities', 'relations'] # dataloader will return list in this order
+          keep_keys: [
+              "input_ids",
+              "bbox",
+              "attention_mask",
+              "token_type_ids",
+              "image",
+              "entities",
+              "relations",
+            ] # dataloader will return list in this order
   loader:
     shuffle: False
     drop_last: False

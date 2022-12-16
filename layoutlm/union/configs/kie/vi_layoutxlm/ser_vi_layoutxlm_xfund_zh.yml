@@ -3,7 +3,7 @@ Global:
   epoch_num: &epoch_num 200
   log_smooth_window: 10
   print_batch_step: 10
-  save_model_dir: ./output/union/models/ser_vi_layoutxlm_xfund_zh
+  save_model_dir: ./output/union/group2/ser_vi_layoutxlm_xfund_zh
   save_epoch_step: 2000
   # evaluation is run every 10 iterations after the 0th iteration
   eval_batch_step: [0, 300]
@@ -11,7 +11,7 @@ Global:
   save_inference_dir:
   use_visualdl: False
   seed: 2022
-  
+
   infer_img: ppstructure/docs/kie/input/zh_val_42.jpg
   # if you want to predict using the groundtruth ocr info,
   # you can use the following config
@@ -74,9 +74,8 @@ Train:
           contains_re: False
           algorithm: *algorithm
           class_path: *class_path
-          use_textline_bbox_info: &use_textline_bbox_info True
-          # one of [None, "tb-yx"]
-          order_method: &order_method "tb-yx"
+          # use_textline_bbox_info: &use_textline_bbox_info True
+          # order_method: &order_method "tb-yx"
       - VQATokenPad:
           max_seq_len: &max_seq_len 512
           return_attention_mask: True
@@ -119,8 +118,8 @@ Eval:
           contains_re: False
           algorithm: *algorithm
           class_path: *class_path
-          use_textline_bbox_info: *use_textline_bbox_info
-          order_method: *order_method
+          # use_textline_bbox_info: *use_textline_bbox_info
+          # order_method: *order_method
       - VQATokenPad:
           max_seq_len: *max_seq_len
           return_attention_mask: True

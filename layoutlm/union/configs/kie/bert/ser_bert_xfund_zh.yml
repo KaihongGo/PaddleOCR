@@ -3,7 +3,7 @@ Global:
   epoch_num: &epoch_num 200
   log_smooth_window: 10
   print_batch_step: 10
-  save_model_dir: ./output/union/models/ser_bert_xfund_zh
+  save_model_dir: ./output/union/ser_bert_xfund_zh
   save_epoch_step: 2000
   # evaluation is run every 10 iterations after the 0th iteration
   eval_batch_step: [0, 300]
@@ -11,7 +11,7 @@ Global:
   save_inference_dir:
   use_visualdl: False
   seed: 2022
-  
+
   infer_img: ppstructure/docs/kie/input/zh_val_42.jpg
   # if you want to predict using the groundtruth ocr info,
   # you can use the following config
